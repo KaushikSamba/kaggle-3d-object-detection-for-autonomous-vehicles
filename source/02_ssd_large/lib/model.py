@@ -9,8 +9,8 @@ from torch.autograd import Variable
 from torchvision import models
 from PIL import Image
 
-from lib.default_box import dbox_params
-from lib.visualize import Visualizer
+from .lib.default_box import dbox_params
+from .lib.visualize import Visualizer
 
 from common import numpy2pil
 
