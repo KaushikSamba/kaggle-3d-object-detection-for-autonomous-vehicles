@@ -9,11 +9,13 @@ from torch.autograd import Variable
 from torchvision import models
 from PIL import Image
 
-from .lib.default_box import dbox_params
-from .lib.visualize import Visualizer
+from lib.default_box import dbox_params
+from lib.visualize import Visualizer
 
-from common import numpy2pil
+# from common import numpy2pil
 
+def numpy2pil(array):
+    return Image.fromarray(np.transpose(array, (1, 2, 0)))
 
 def set_batch_norm_eval(model):
 
