@@ -1,0 +1,5 @@
+.vscode/
+*.pyc
+_debug/
+_log/
+runs/

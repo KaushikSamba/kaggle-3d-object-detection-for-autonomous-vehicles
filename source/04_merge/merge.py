@@ -5,6 +5,11 @@ from tqdm import tqdm
 
 
 def main():
+"""
+The idea in this file is to merge the predictions from each of the models in step 2 and 
+step 3. Step 2 identifies large objects while Step 3 identifies small ones. Combining 
+the detection results of these two detectors should result in an increased score. 
+"""
 
     data1 = pd.read_csv('../02_ssd_large/_submission/submit_model_th0.5_gth0.3_ov0.1.csv')
     data1.index = data1['Id']

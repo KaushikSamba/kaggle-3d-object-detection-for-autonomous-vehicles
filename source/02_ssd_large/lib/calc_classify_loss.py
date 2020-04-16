@@ -3,6 +3,7 @@ from logging import getLogger
 import torch
 from torch import nn
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criteria = nn.CrossEntropyLoss(weight=torch.Tensor([
     2,  # car
     5,  # other_vehicle
@@ -14,7 +15,7 @@ criteria = nn.CrossEntropyLoss(weight=torch.Tensor([
     100,  # animal
     100,  # emergency_vehicle
     0.4  # null
-]).cuda(), reduction='sum')
+]).to(device), reduction='sum')
 
 
 def calc_classify_loss(net_out_l, class_concat, l):
@@ -35,7 +36,7 @@ def calc_classify_loss(net_out_l, class_concat, l):
         class_concat_target['y'].tolist()
     ]
     logger.debug('num sample: {}'.format(len(class_concat_target)))
-    target = torch.Tensor(class_concat_target['class'].tolist()).long().cuda()
+    target = torch.Tensor(class_concat_target['class'].tolist()).long().to(device)
 
     v = criteria(net_out, target)
 

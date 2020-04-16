@@ -31,7 +31,7 @@ from lib.suppression import suppression
 from lib.visualize import coord2_img
 from lib.log import init_logger
 
-from common import numpy2pil
+# from common import numpy2pil
 
 from tensorboardX import SummaryWriter
 writer = SummaryWriter()
@@ -39,6 +39,10 @@ writer = SummaryWriter()
 random.seed(1048)
 np.random.seed(1048)
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def numpy2pil(array):
+    return Image.fromarray(np.transpose(array, (1, 2, 0)))
 
 def arg_min2(v):
     return np.argsort(v)[:2]
@@ -230,7 +234,7 @@ def train_main(model, dataset, optimizer, list_train_img, target_classes, num_it
         # forward
 
         optimizer.zero_grad()
-        net_out = model.forward(batch_input.float().cuda())
+        net_out = model.forward(batch_input.float().to(device))
 
         net_out_numpy = [tensor.cpu().data.numpy() for tensor in net_out]
         net_out_numpy_batch = [[tensor[b, :, :, :] for tensor in net_out_numpy] for b in range(batch_size)]
@@ -344,7 +348,7 @@ def validate(model, dataset, list_valid_img, target_classes, epoch):
         # input_tensor = augment_input(img_input)
 
         with torch.no_grad():
-            net_out = model.forward(input_tensor.float().cuda())
+            net_out = model.forward(input_tensor.float().to(device))
 
         net_out_numpy = [tensor.cpu().data.numpy() for tensor in net_out]
         net_out_numpy_batch = [tensor[0, :, :, :] for tensor in net_out_numpy]
@@ -411,7 +415,7 @@ def main():
     logger.info('number of valid images: {}'.format(len(list_valid_img)))
 
     # build model
-    model = build_model()
+    model = build_model().to(device)
 
     # optimizer
 

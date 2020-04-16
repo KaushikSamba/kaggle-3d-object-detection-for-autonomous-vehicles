@@ -43,7 +43,8 @@ class Model(nn.Module):
         super().__init__()
 
         self.num_classes = 10
-        self.outoput_channel = self.num_classes + 7
+        self.output_channel = self.num_classes + 7
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         resnet34 = models.resnet34(pretrained=True)
 
@@ -88,7 +89,7 @@ class Model(nn.Module):
         self.ex1_intermediate = nn.Sequential(
             nn.Conv2d(1024, 512, kernel_size=3, padding=1, stride=1),
             nn.Softplus(),
-            nn.Conv2d(512, 4 * self.outoput_channel, kernel_size=1, padding=0, stride=1)
+            nn.Conv2d(512, 4 * self.output_channel, kernel_size=1, padding=0, stride=1)
         )
 
         # self.ex2_intermediate = nn.Conv2d(512, 4 * self.outoput_channel, kernel_size=3, padding=1, stride=1)
@@ -124,14 +125,14 @@ class Model(nn.Module):
                                 (batch_size, 1, 1, h.shape[-1], h.shape[-1]))
 
         assignment = torch.softmax(assignment, dim=2)  # [batch_size, dbox, channel, x, y]
-        x_abs = torch.tanh(x) * step + torch.from_numpy(x_points).cuda()
-        y_abs = torch.tanh(y) * step + torch.from_numpy(y_points).cuda()
+        x_abs = torch.tanh(x) * step + torch.from_numpy(x_points).to(device)
+        y_abs = torch.tanh(y) * step + torch.from_numpy(y_points).to(device)
         z_abs = z + 1010.0
 
-        length_abs = torch.exp(length * 0.1 + math.log2(step) / 1.5) * torch.from_numpy(length_shifts).cuda() + 1
-        width_abs = torch.exp(width * 0.1 + math.log2(step) / 1.5) * torch.from_numpy(width_shifts).cuda() + 1
-        height_abs = torch.exp(height * 0.1 + math.log2(step) / 1.5) * torch.from_numpy(height_shifts).cuda() + 1
-        rotate_abs = torch.atan(rotate) + torch.from_numpy(rotate_vars).cuda()
+        length_abs = torch.exp(length * 0.1 + math.log2(step) / 1.5) * torch.from_numpy(length_shifts).to(device) + 1
+        width_abs = torch.exp(width * 0.1 + math.log2(step) / 1.5) * torch.from_numpy(width_shifts).to(device) + 1
+        height_abs = torch.exp(height * 0.1 + math.log2(step) / 1.5) * torch.from_numpy(height_shifts).to(device) + 1
+        rotate_abs = torch.atan(rotate) + torch.from_numpy(rotate_vars).to(device)
 
         return torch.cat([assignment, x_abs, y_abs, length_abs, width_abs, z_abs, height_abs, rotate_abs], dim=2)
 
@@ -160,8 +161,8 @@ class Model(nn.Module):
 
         for out in list_main:
             size = out.shape[-1]
-            h = self.header(out.reshape(-1, 4, self.outoput_channel, size, size), img_size=x.shape[-1])
-            list_output.append(h.reshape(-1, 4 * self.outoput_channel, size, size))
+            h = self.header(out.reshape(-1, 4, self.output_channel, size, size), img_size=x.shape[-1])
+            list_output.append(h.reshape(-1, 4 * self.output_channel, size, size))
 
         return list_output
 
@@ -169,7 +170,6 @@ class Model(nn.Module):
 def build_model():
 
     model = Model()
-    model.cuda()
     return model
 
 
@@ -178,7 +178,10 @@ if __name__ == '__main__':
     dir_debug = Path('_debug')
     dir_debug.mkdir(exist_ok=True)
 
-    model = build_model()
+    # print("Hi!")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    model = build_model().to(device)
     print(model)
 
     viz = Visualizer('colors.json')
@@ -186,10 +189,10 @@ if __name__ == '__main__':
     # 768 x 768
 
     in_arr1 = np.zeros((2, 3, 768, 768), dtype=np.float32)
-    in_tensor1 = torch.from_numpy(in_arr1)
+    in_tensor1 = torch.from_numpy(in_arr1).to(device)
 
-    out_vars1 = model.forward(in_tensor1.cuda())
-
+    out_vars1 = model.forward(in_tensor1)
+    print(len(out_vars1))
     [print(out_var.shape) for out_var in out_vars1]
 
     out_var_numpy1 = [tensor.cpu().data.numpy() for tensor in out_vars1]
@@ -206,7 +209,7 @@ if __name__ == '__main__':
     in_arr2 = np.zeros((2, 3, 1024, 1024), dtype=np.float32)
     in_tensor2 = torch.from_numpy(in_arr2)
 
-    out_vars2 = model.forward(in_tensor2.cuda())
+    out_vars2 = model.forward(in_tensor2.to(device))
 
     [print(out_var.shape) for out_var in out_vars2]
 
